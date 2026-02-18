@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Input Jadwal - Operator Sekolah</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; padding: 20px; }
+        .container { max-width: 500px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #333; margin-bottom: 20px; }
+        
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; color: #555; }
+        select, input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-size: 14px; }
+        
+        button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; transition: 0.3s; font-weight: bold; }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #ccc; }
+
+        .loading { text-align: center; color: #007bff; font-style: italic; display: none; margin-bottom: 10px; }
+        .status-msg { text-align: center; margin-top: 15px; font-size: 14px; }
+        .success { color: green; }
+        .error { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>📝 Input Jadwal Mengajar</h2>
+    
+    <div id="loadingData" class="loading">Sedang mengambil data Guru & Mapel...</div>
+
+    <form id="formJadwal">
+        <div class="form-group">
+            <label>Hari</label>
+            <select name="hari" required>
+                <option value="">-- Pilih Hari --</option>
+                <option value="Senin">Senin</option>
+                <option value="Selasa">Selasa</option>
+                <option value="Rabu">Rabu</option>
+                <option value="Kamis">Kamis</option>
+                <option value="Jumat">Jumat</option>
+                <option value="Sabtu">Sabtu</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Jam Ke-</label>
+            <select name="jam" required>
+                <option value="">-- Pilih Jam --</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+            </select>
+        </div>
+
+        <div class="form-group" style="display: flex; gap: 10px;">
+            <div style="flex: 1;">
+                <label>Mulai</label>
+                <input type="text" name="waktuMulai" placeholder="07.30" required>
+            </div>
+            <div style="flex: 1;">
+                <label>Selesai</label>
+                <input type="text" name="waktuSelesai" placeholder="08.15" required>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Kelas</label>
+            <select name="kelas" id="pilihKelas" required>
+                <option value="">Memuat data...</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Mata Pelajaran</label>
+            <select name="mapel" id="pilihMapel" required>
+                <option value="">Memuat data...</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Guru Pengajar</label>
+            <select name="guru" id="pilihGuru" required>
+                <option value="">Memuat data...</option>
+            </select>
+        </div>
+
+        <button type="submit" id="btnSimpan">SIMPAN DATA</button>
+        <div id="statusMsg" class="status-msg"></div>
+    </form>
+</div>
+
+<script>
+    // ==========================================
+    // GANTI URL INI DENGAN URL DEPLOY ANDA !!!
+    // ==========================================
+    const API_URL = "https://script.google.com/macros/s/AKfycbw5RQDaS0GsHL1e7wYbojvfpsb-EwqzcfqMWv6GqGOB-IYKXnmw2kNxRvaIStaLMW1pKQ/exec"; 
+    // Contoh: https://script.google.com/macros/s/AKfycbx.../exec
+
+    // 1. Saat Halaman Dibuka: Ambil Data Guru/Mapel
+    window.onload = function() {
+        document.getElementById('loadingData').style.display = 'block';
+        
+        fetch(API_URL + "?action=getMaster")
+        .then(response => response.json())
+        .then(res => {
+            document.getElementById('loadingData').style.display = 'none';
+            if (res.status === 'success') {
+                isiDropdown('pilihKelas', res.data.kelas);
+                isiDropdown('pilihMapel', res.data.mapel);
+                isiDropdown('pilihGuru', res.data.guru);
+            } else {
+                alert('Gagal mengambil data master');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            document.getElementById('loadingData').innerText = "Gagal koneksi ke server.";
+        });
+    };
+
+    function isiDropdown(idElement, dataArray) {
+        const select = document.getElementById(idElement);
+        select.innerHTML = '<option value="">-- Pilih --</option>'; // Reset
+        dataArray.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item;
+            option.text = item;
+            select.appendChild(option);
+        });
+    }
+
+    // 2. Saat Tombol Simpan Ditekan
+    document.getElementById('formJadwal').addEventListener('submit', function(e) {
+        e.preventDefault(); // Mencegah reload halaman
+        
+        const btn = document.getElementById('btnSimpan');
+        const status = document.getElementById('statusMsg');
+        
+        // Ambil data form
+        const formData = new FormData(e.target);
+        const dataKirim = Object.fromEntries(formData.entries());
+
+        // UI Loading
+        btn.disabled = true;
+        btn.innerText = "Sedang Menyimpan...";
+        status.innerHTML = "";
+
+        // Kirim ke Google Script
+        fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify(dataKirim) // Kirim sebagai Text JSON
+            // Catatan: Google Script paling aman menerima 'text/plain' agar tidak kena blokir CORS
+        })
+        .then(response => response.json())
+        .then(res => {
+            btn.disabled = false;
+            btn.innerText = "SIMPAN DATA";
+
+            if (res.status === 'success') {
+                status.innerHTML = `<span class="success">✅ ${res.message}</span>`;
+                // Jangan reset form agar operator bisa input jam berikutnya dengan cepat
+                // document.getElementById('formJadwal').reset(); 
+            } else {
+                // Ini jika BENTROK jadwal
+                status.innerHTML = `<span class="error">⚠️ ${res.message}</span>`;
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerText = "SIMPAN DATA";
+            status.innerHTML = `<span class="error">❌ Terjadi kesalahan jaringan. Coba lagi.</span>`;
+            console.error(err);
+        });
+    });
+</script>
+
+</body>
+</html>
