@@ -3,184 +3,261 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Input Jadwal - Operator Sekolah</title>
+    <title>Input Jadwal Paralel</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; padding: 20px; }
-        .container { max-width: 500px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #333; margin-bottom: 20px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: 600; color: #555; }
-        select, input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-size: 14px; }
+        /* Header Control */
+        .controls { display: flex; gap: 15px; margin-bottom: 20px; padding: 15px; background: #e9ecef; border-radius: 5px; align-items: center; }
+        select, button { padding: 10px; border-radius: 4px; border: 1px solid #ccc; font-size: 14px; }
+        button.primary { background: #007bff; color: white; border: none; font-weight: bold; cursor: pointer; }
+        button.primary:hover { background: #0056b3; }
         
-        button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; transition: 0.3s; font-weight: bold; }
-        button:hover { background-color: #0056b3; }
-        button:disabled { background-color: #ccc; }
+        /* The Grid Table */
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; vertical-align: top; }
+        th { background: #343a40; color: white; position: sticky; top: 0; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
 
-        .loading { text-align: center; color: #007bff; font-style: italic; display: none; margin-bottom: 10px; }
-        .status-msg { text-align: center; margin-top: 15px; font-size: 14px; }
-        .success { color: green; }
-        .error { color: red; font-weight: bold; }
+        /* Cell Inputs */
+        .cell-input { display: flex; flex-direction: column; gap: 5px; }
+        .cell-input select { width: 100%; font-size: 12px; padding: 5px; }
+        .jam-label { font-weight: bold; font-size: 16px; }
+
+        /* Status & Loading */
+        #loading { display: none; color: #007bff; font-weight: bold; }
+        .msg-box { margin-top: 15px; padding: 10px; border-radius: 5px; text-align: center; display: none; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; white-space: pre-line; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>📝 Input Jadwal Mengajar</h2>
+    <h2>📅 Input Jadwal Per Tingkat</h2>
     
-    <div id="loadingData" class="loading">Sedang mengambil data Guru & Mapel...</div>
+    <div class="controls">
+        <select id="pilihHari">
+            <option value="">-- Pilih Hari --</option>
+            <option value="Senin">Senin</option>
+            <option value="Selasa">Selasa</option>
+            <option value="Rabu">Rabu</option>
+            <option value="Kamis">Kamis</option>
+            <option value="Jumat">Jumat</option>
+            <option value="Sabtu">Sabtu</option>
+        </select>
 
-    <form id="formJadwal">
-        <div class="form-group">
-            <label>Hari</label>
-            <select name="hari" required>
-                <option value="">-- Pilih Hari --</option>
-                <option value="Senin">Senin</option>
-                <option value="Selasa">Selasa</option>
-                <option value="Rabu">Rabu</option>
-                <option value="Kamis">Kamis</option>
-                <option value="Jumat">Jumat</option>
-                <option value="Sabtu">Sabtu</option>
+        <select id="pilihTingkat" disabled>
+            <option value="">-- Pilih Tingkat --</option>
             </select>
-        </div>
 
-        <div class="form-group">
-            <label>Jam Ke-</label>
-            <select name="jam" required>
-                <option value="">-- Pilih Jam --</option>
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
-                <option value="6">6</option>
-                <option value="7">7</option>
-                <option value="8">8</option>
-                <option value="9">9</option>
-                <option value="10">10</option>
-            </select>
-        </div>
+        <button class="primary" onclick="generateGrid()">Tampilkan Grid</button>
+        <span id="loading">Memuat Data...</span>
+    </div>
 
-        <div class="form-group" style="display: flex; gap: 10px;">
-            <div style="flex: 1;">
-                <label>Mulai</label>
-                <input type="text" name="waktuMulai" placeholder="07.30" required>
-            </div>
-            <div style="flex: 1;">
-                <label>Selesai</label>
-                <input type="text" name="waktuSelesai" placeholder="08.15" required>
-            </div>
+    <form id="formGrid">
+        <div class="table-wrapper">
+            <table id="gridTable">
+                <thead>
+                    <tr id="headerRow"><th>Jam Ke</th></tr>
+                </thead>
+                <tbody id="bodyTable">
+                    <tr><td colspan="5">Silakan pilih Hari dan Tingkat Kelas terlebih dahulu.</td></tr>
+                </tbody>
+            </table>
         </div>
-
-        <div class="form-group">
-            <label>Kelas</label>
-            <select name="kelas" id="pilihKelas" required>
-                <option value="">Memuat data...</option>
-            </select>
+        
+        <div style="margin-top: 20px; text-align: right;">
+            <button type="button" class="primary" id="btnSimpan" onclick="simpanData()" style="width: 200px; display:none;">💾 SIMPAN SEMUA</button>
         </div>
-
-        <div class="form-group">
-            <label>Mata Pelajaran</label>
-            <select name="mapel" id="pilihMapel" required>
-                <option value="">Memuat data...</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label>Guru Pengajar</label>
-            <select name="guru" id="pilihGuru" required>
-                <option value="">Memuat data...</option>
-            </select>
-        </div>
-
-        <button type="submit" id="btnSimpan">SIMPAN DATA</button>
-        <div id="statusMsg" class="status-msg"></div>
     </form>
+    
+    <div id="statusMsg" class="msg-box"></div>
 </div>
 
 <script>
     // ==========================================
-    // GANTI URL INI DENGAN URL DEPLOY ANDA !!!
+    // PASTE URL DEPLOY ANDA DI SINI !!
     // ==========================================
-    const API_URL = "https://script.google.com/macros/s/AKfycbw5RQDaS0GsHL1e7wYbojvfpsb-EwqzcfqMWv6GqGOB-IYKXnmw2kNxRvaIStaLMW1pKQ/exec"; 
-    // Contoh: https://script.google.com/macros/s/AKfycbx.../exec
+    const API_URL = "https://script.google.com/macros/s/AKfycbw5RQDaS0GsHL1e7wYbojvfpsb-EwqzcfqMWv6GqGOB-IYKXnmw2kNxRvaIStaLMW1pKQ/exec";
 
-    // 1. Saat Halaman Dibuka: Ambil Data Guru/Mapel
+    let GLOBAL_DATA = { kelas: [], mapel: [], guru: [] };
+
+    // 1. Load Data Awal
     window.onload = function() {
-        document.getElementById('loadingData').style.display = 'block';
-        
+        document.getElementById('loading').style.display = 'inline';
         fetch(API_URL + "?action=getMaster")
-        .then(response => response.json())
+        .then(res => res.json())
         .then(res => {
-            document.getElementById('loadingData').style.display = 'none';
-            if (res.status === 'success') {
-                isiDropdown('pilihKelas', res.data.kelas);
-                isiDropdown('pilihMapel', res.data.mapel);
-                isiDropdown('pilihGuru', res.data.guru);
-            } else {
-                alert('Gagal mengambil data master');
+            document.getElementById('loading').style.display = 'none';
+            if(res.status === 'success') {
+                GLOBAL_DATA = res.data;
+                isiPilihanTingkat();
+                document.getElementById('pilihTingkat').disabled = false;
             }
-        })
-        .catch(err => {
-            console.error(err);
-            document.getElementById('loadingData').innerText = "Gagal koneksi ke server.";
         });
     };
 
-    function isiDropdown(idElement, dataArray) {
-        const select = document.getElementById(idElement);
-        select.innerHTML = '<option value="">-- Pilih --</option>'; // Reset
-        dataArray.forEach(item => {
-            const option = document.createElement('option');
-            option.value = item;
-            option.text = item;
-            select.appendChild(option);
+    // Fungsi Mengelompokkan Kelas (Misal 7.1, 7.2 jadi "Tingkat 7")
+    function isiPilihanTingkat() {
+        const uniqueLevels = new Set();
+        GLOBAL_DATA.kelas.forEach(k => {
+            let level = k.split('.')[0]; // Ambil angka depan (6 dari 6.1)
+            if(level) uniqueLevels.add(level);
+        });
+        
+        const select = document.getElementById('pilihTingkat');
+        Array.from(uniqueLevels).sort().forEach(lvl => {
+            let opt = document.createElement('option');
+            opt.value = lvl;
+            opt.text = "Kelas " + lvl; // Tampil sebagai "Kelas 6"
+            select.appendChild(opt);
         });
     }
 
-    // 2. Saat Tombol Simpan Ditekan
-    document.getElementById('formJadwal').addEventListener('submit', function(e) {
-        e.preventDefault(); // Mencegah reload halaman
-        
-        const btn = document.getElementById('btnSimpan');
-        const status = document.getElementById('statusMsg');
-        
-        // Ambil data form
-        const formData = new FormData(e.target);
-        const dataKirim = Object.fromEntries(formData.entries());
+    // 2. Generate Grid (Tabel)
+    function generateGrid() {
+        const hari = document.getElementById('pilihHari').value;
+        const tingkat = document.getElementById('pilihTingkat').value;
 
-        // UI Loading
+        if(!hari || !tingkat) {
+            alert("Pilih Hari dan Tingkat Kelas dulu!");
+            return;
+        }
+
+        // Filter Kelas sesuai Tingkat (Misal pilih 6 -> dapat 6.1, 6.2, 6.3)
+        const kelasTerpilih = GLOBAL_DATA.kelas.filter(k => k.startsWith(tingkat + "."));
+        
+        if(kelasTerpilih.length === 0) {
+            alert("Tidak ada data kelas untuk tingkat ini.");
+            return;
+        }
+
+        // Buat Header Tabel
+        const headerRow = document.getElementById('headerRow');
+        headerRow.innerHTML = "<th>Jam</th>"; // Reset
+        kelasTerpilih.forEach(k => {
+            headerRow.innerHTML += `<th>${k}</th>`;
+        });
+
+        // Buat Body Tabel (Jam 1 sampai 10)
+        const bodyTable = document.getElementById('bodyTable');
+        bodyTable.innerHTML = ""; // Bersihkan
+
+        // Siapkan Opsi Dropdown Guru & Mapel sekali saja biar ringan
+        const opsiMapel = GLOBAL_DATA.mapel.map(m => `<option value="${m}">${m}</option>`).join('');
+        const opsiGuru = GLOBAL_DATA.guru.map(g => `<option value="${g}">${g}</option>`).join('');
+
+        for (let jam = 1; jam <= 10; jam++) {
+            let tr = document.createElement('tr');
+            
+            // Kolom Jam
+            tr.innerHTML = `<td class="jam-label">${jam}</td>`;
+
+            // Kolom Per Kelas
+            kelasTerpilih.forEach(k => {
+                // Kita beri ID unik ke setiap input: jam-kelas-jenis
+                // Contoh: mapel-1-6.1
+                tr.innerHTML += `
+                    <td>
+                        <div class="cell-input">
+                            <select name="mapel-${jam}-${k}">
+                                <option value="" style="color:#ccc">-- Mapel --</option>
+                                ${opsiMapel}
+                            </select>
+                            <select name="guru-${jam}-${k}">
+                                <option value="" style="color:#ccc">-- Guru --</option>
+                                ${opsiGuru}
+                            </select>
+                        </div>
+                    </td>
+                `;
+            });
+            bodyTable.appendChild(tr);
+        }
+
+        document.getElementById('btnSimpan').style.display = 'inline-block';
+        document.getElementById('statusMsg').style.display = 'none';
+    }
+
+    // 3. Simpan Data (Bulk)
+    function simpanData() {
+        const btn = document.getElementById('btnSimpan');
+        const statusBox = document.getElementById('statusMsg');
+        const form = document.getElementById('formGrid');
+        const hari = document.getElementById('pilihHari').value;
+        
         btn.disabled = true;
         btn.innerText = "Sedang Menyimpan...";
-        status.innerHTML = "";
+        statusBox.style.display = 'none';
 
-        // Kirim ke Google Script
+        // Kumpulkan data dari Grid
+        let dataKirim = [];
+        const inputs = form.querySelectorAll('select');
+        
+        // Kita butuh mapping input kembali ke struktur data
+        // Format name: "jenis-jam-kelas" (contoh: mapel-1-6.1)
+        
+        let tempObj = {}; // { "1-6.1": {mapel:..., guru:...} }
+
+        inputs.forEach(input => {
+            if(!input.value) return; // Lewati yang kosong
+
+            const parts = input.name.split('-'); // [jenis, jam, kelas]
+            const jenis = parts[0]; // mapel / guru
+            const jam = parts[1];
+            const kelas = parts[2]; // Bisa jadi "6.1" atau "6.2" dll
+            const key = `${jam}-${kelas}`;
+
+            if(!tempObj[key]) tempObj[key] = { hari: hari, jam: jam, kelas: kelas };
+            tempObj[key][jenis] = input.value;
+        });
+
+        // Ubah object ke array siap kirim
+        for (let key in tempObj) {
+            let item = tempObj[key];
+            // Hanya kirim jika pasangan Mapel & Guru terisi lengkap (Opsional, tergantung kebijakan)
+            if(item.guru && item.mapel) {
+                dataKirim.push(item);
+            }
+        }
+
+        if(dataKirim.length === 0) {
+            alert("Isi minimal satu jadwal (Mapel & Guru) sebelum menyimpan.");
+            btn.disabled = false;
+            btn.innerText = "💾 SIMPAN SEMUA";
+            return;
+        }
+
+        console.log("Mengirim data:", dataKirim);
+
+        // Kirim ke Backend
         fetch(API_URL, {
             method: 'POST',
-            body: JSON.stringify(dataKirim) // Kirim sebagai Text JSON
-            // Catatan: Google Script paling aman menerima 'text/plain' agar tidak kena blokir CORS
+            body: JSON.stringify(dataKirim)
         })
-        .then(response => response.json())
+        .then(res => res.json())
         .then(res => {
             btn.disabled = false;
-            btn.innerText = "SIMPAN DATA";
-
-            if (res.status === 'success') {
-                status.innerHTML = `<span class="success">✅ ${res.message}</span>`;
-                // Jangan reset form agar operator bisa input jam berikutnya dengan cepat
-                // document.getElementById('formJadwal').reset(); 
+            btn.innerText = "💾 SIMPAN SEMUA";
+            statusBox.style.display = 'block';
+            
+            if(res.status === 'success') {
+                statusBox.className = 'msg-box success';
+                statusBox.innerText = res.message;
             } else {
-                // Ini jika BENTROK jadwal
-                status.innerHTML = `<span class="error">⚠️ ${res.message}</span>`;
+                statusBox.className = 'msg-box error';
+                statusBox.innerText = res.message;
             }
         })
         .catch(err => {
             btn.disabled = false;
-            btn.innerText = "SIMPAN DATA";
-            status.innerHTML = `<span class="error">❌ Terjadi kesalahan jaringan. Coba lagi.</span>`;
             console.error(err);
+            alert("Gagal koneksi server.");
         });
-    });
+    }
 </script>
 
 </body>
