@@ -3,40 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Input Jadwal Paralel</title>
+    <title>Input Jadwal SD - Auto Load</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; }
-        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         
-        /* Header Control */
-        .controls { display: flex; gap: 15px; margin-bottom: 20px; padding: 15px; background: #e9ecef; border-radius: 5px; align-items: center; }
-        select, button { padding: 10px; border-radius: 4px; border: 1px solid #ccc; font-size: 14px; }
-        button.primary { background: #007bff; color: white; border: none; font-weight: bold; cursor: pointer; }
-        button.primary:hover { background: #0056b3; }
+        h2 { margin-top: 0; color: #333; }
+
+        /* Control Bar */
+        .controls { display: flex; gap: 15px; background: #eef2f5; padding: 15px; border-radius: 8px; margin-bottom: 20px; align-items: center; border: 1px solid #ddd; }
+        select { padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; min-width: 150px; }
         
-        /* The Grid Table */
-        .table-wrapper { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 800px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; vertical-align: top; }
-        th { background: #343a40; color: white; position: sticky; top: 0; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
+        /* Buttons */
+        .btn { padding: 10px 20px; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-blue { background: #007bff; }
+        .btn-blue:hover { background: #0056b3; }
+        .btn-green { background: #28a745; width: 200px; font-size: 16px; }
+        .btn-green:hover { background: #218838; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
 
-        /* Cell Inputs */
-        .cell-input { display: flex; flex-direction: column; gap: 5px; }
-        .cell-input select { width: 100%; font-size: 12px; padding: 5px; }
-        .jam-label { font-weight: bold; font-size: 16px; }
+        /* Grid Table */
+        .table-responsive { overflow-x: auto; border: 1px solid #eee; border-radius: 5px; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        th { background: #343a40; color: white; padding: 12px; position: sticky; top: 0; text-align: center; }
+        td { border: 1px solid #e0e0e0; padding: 8px; vertical-align: top; background: #fff; }
+        tr:nth-child(even) td { background: #fafafa; }
 
-        /* Status & Loading */
-        #loading { display: none; color: #007bff; font-weight: bold; }
-        .msg-box { margin-top: 15px; padding: 10px; border-radius: 5px; text-align: center; display: none; }
-        .success { background: #d4edda; color: #155724; }
-        .error { background: #f8d7da; color: #721c24; white-space: pre-line; }
+        /* Cell Styling */
+        .jam-col { font-size: 18px; font-weight: bold; text-align: center; color: #555; width: 50px; vertical-align: middle; }
+        .cell-input { display: flex; flex-direction: column; gap: 6px; }
+        .cell-input select { width: 100%; font-size: 12px; padding: 6px; border: 1px solid #ddd; }
+        .cell-input select:focus { border-color: #007bff; outline: none; }
+        
+        /* Loading & Status */
+        #loader { display: none; margin-left: 10px; color: #007bff; font-weight: bold; }
+        #statusMsg { margin-top: 20px; padding: 15px; border-radius: 5px; text-align: center; display: none; font-weight: bold; white-space: pre-line; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>📅 Input Jadwal Per Tingkat</h2>
+    <h2>🗓️ Kelola Jadwal Pelajaran</h2>
     
     <div class="controls">
         <select id="pilihHari">
@@ -50,125 +60,125 @@
         </select>
 
         <select id="pilihTingkat" disabled>
-            <option value="">-- Pilih Tingkat --</option>
-            </select>
+            <option value="">-- Memuat Data... --</option>
+        </select>
 
-        <button class="primary" onclick="generateGrid()">Tampilkan Grid</button>
-        <span id="loading">Memuat Data...</span>
+        <button class="btn btn-blue" onclick="loadGrid()">Tampilkan & Load Data</button>
+        <span id="loader">⏳ Sedang mengambil data...</span>
     </div>
 
-    <form id="formGrid">
-        <div class="table-wrapper">
+    <form id="formJadwal">
+        <div class="table-responsive">
             <table id="gridTable">
-                <thead>
-                    <tr id="headerRow"><th>Jam Ke</th></tr>
-                </thead>
-                <tbody id="bodyTable">
-                    <tr><td colspan="5">Silakan pilih Hari dan Tingkat Kelas terlebih dahulu.</td></tr>
-                </tbody>
+                <thead><tr id="headerRow"><th>Jam</th><th style="font-weight:normal; font-style:italic;">Pilih Hari & Tingkat dulu...</th></tr></thead>
+                <tbody id="bodyTable"></tbody>
             </table>
         </div>
         
-        <div style="margin-top: 20px; text-align: right;">
-            <button type="button" class="primary" id="btnSimpan" onclick="simpanData()" style="width: 200px; display:none;">💾 SIMPAN SEMUA</button>
+        <div style="margin-top: 20px; text-align: right; display: none;" id="saveArea">
+            <button type="button" class="btn btn-green" id="btnSimpan" onclick="simpanData()">💾 SIMPAN PERUBAHAN</button>
         </div>
     </form>
     
-    <div id="statusMsg" class="msg-box"></div>
+    <div id="statusMsg"></div>
 </div>
 
 <script>
     // ==========================================
-    // PASTE URL DEPLOY ANDA DI SINI !!
+    // GANTI URL DEPLOY BARU ANDA DISINI !!!
     // ==========================================
     const API_URL = "https://script.google.com/macros/s/AKfycbw5RQDaS0GsHL1e7wYbojvfpsb-EwqzcfqMWv6GqGOB-IYKXnmw2kNxRvaIStaLMW1pKQ/exec";
 
     let GLOBAL_DATA = { kelas: [], mapel: [], guru: [] };
 
-    // 1. Load Data Awal
+    // 1. Initial Load (Ambil Master Data)
     window.onload = function() {
-        document.getElementById('loading').style.display = 'inline';
         fetch(API_URL + "?action=getMaster")
         .then(res => res.json())
         .then(res => {
-            document.getElementById('loading').style.display = 'none';
             if(res.status === 'success') {
                 GLOBAL_DATA = res.data;
-                isiPilihanTingkat();
-                document.getElementById('pilihTingkat').disabled = false;
+                initTingkatDropdown();
+            } else {
+                alert("Gagal memuat master data.");
             }
         });
     };
 
-    // Fungsi Mengelompokkan Kelas (Misal 7.1, 7.2 jadi "Tingkat 7")
-    function isiPilihanTingkat() {
+    function initTingkatDropdown() {
         const uniqueLevels = new Set();
         GLOBAL_DATA.kelas.forEach(k => {
-            let level = k.split('.')[0]; // Ambil angka depan (6 dari 6.1)
-            if(level) uniqueLevels.add(level);
+            // Asumsi format: "6.1" -> ambil "6"
+            let lvl = k.split('.')[0]; 
+            if(lvl) uniqueLevels.add(lvl);
         });
         
         const select = document.getElementById('pilihTingkat');
+        select.innerHTML = '<option value="">-- Pilih Tingkat Kelas --</option>';
         Array.from(uniqueLevels).sort().forEach(lvl => {
             let opt = document.createElement('option');
             opt.value = lvl;
-            opt.text = "Kelas " + lvl; // Tampil sebagai "Kelas 6"
+            opt.text = "Kelas " + lvl;
             select.appendChild(opt);
+        });
+        select.disabled = false;
+    }
+
+    // 2. Load Grid & Data Existing
+    function loadGrid() {
+        const hari = document.getElementById('pilihHari').value;
+        const tingkat = document.getElementById('pilihTingkat').value;
+        const loader = document.getElementById('loader');
+        const bodyTable = document.getElementById('bodyTable');
+        const headerRow = document.getElementById('headerRow');
+
+        if(!hari || !tingkat) { alert("Pilih Hari dan Tingkat Kelas!"); return; }
+
+        loader.style.display = 'inline';
+        bodyTable.innerHTML = "";
+        
+        // Filter Kelas (misal 6.1, 6.2)
+        const kelasTarget = GLOBAL_DATA.kelas.filter(k => k.startsWith(tingkat + "."));
+        
+        // Setup Header Table
+        headerRow.innerHTML = "<th>Jam</th>";
+        kelasTarget.forEach(k => headerRow.innerHTML += `<th>${k}</th>`);
+
+        // REQUEST KE API: Ambil jadwal yang sudah ada
+        fetch(`${API_URL}?action=getJadwal&hari=${hari}`)
+        .then(res => res.json())
+        .then(res => {
+            loader.style.display = 'none';
+            if(res.status === 'success') {
+                renderRows(kelasTarget, res.data); // Render dengan data
+                document.getElementById('saveArea').style.display = 'block';
+            }
         });
     }
 
-    // 2. Generate Grid (Tabel)
-    function generateGrid() {
-        const hari = document.getElementById('pilihHari').value;
-        const tingkat = document.getElementById('pilihTingkat').value;
-
-        if(!hari || !tingkat) {
-            alert("Pilih Hari dan Tingkat Kelas dulu!");
-            return;
-        }
-
-        // Filter Kelas sesuai Tingkat (Misal pilih 6 -> dapat 6.1, 6.2, 6.3)
-        const kelasTerpilih = GLOBAL_DATA.kelas.filter(k => k.startsWith(tingkat + "."));
-        
-        if(kelasTerpilih.length === 0) {
-            alert("Tidak ada data kelas untuk tingkat ini.");
-            return;
-        }
-
-        // Buat Header Tabel
-        const headerRow = document.getElementById('headerRow');
-        headerRow.innerHTML = "<th>Jam</th>"; // Reset
-        kelasTerpilih.forEach(k => {
-            headerRow.innerHTML += `<th>${k}</th>`;
-        });
-
-        // Buat Body Tabel (Jam 1 sampai 10)
+    function renderRows(kelasArray, jadwalExisting) {
         const bodyTable = document.getElementById('bodyTable');
-        bodyTable.innerHTML = ""; // Bersihkan
+        const opsiMapel = ['<option value="">- Mapel -</option>', ...GLOBAL_DATA.mapel.map(m => `<option value="${m}">${m}</option>`)].join('');
+        const opsiGuru = ['<option value="">- Guru -</option>', ...GLOBAL_DATA.guru.map(g => `<option value="${g}">${g}</option>`)].join('');
 
-        // Siapkan Opsi Dropdown Guru & Mapel sekali saja biar ringan
-        const opsiMapel = GLOBAL_DATA.mapel.map(m => `<option value="${m}">${m}</option>`).join('');
-        const opsiGuru = GLOBAL_DATA.guru.map(g => `<option value="${g}">${g}</option>`).join('');
-
-        for (let jam = 1; jam <= 10; jam++) {
+        // Loop Jam 1 - 10
+        for(let jam = 1; jam <= 10; jam++) {
             let tr = document.createElement('tr');
+            tr.innerHTML = `<td class="jam-col">${jam}</td>`;
             
-            // Kolom Jam
-            tr.innerHTML = `<td class="jam-label">${jam}</td>`;
+            kelasArray.forEach(k => {
+                // Cek apakah sudah ada data di jam & kelas ini?
+                // Key format dari backend: "JAM-KELAS"
+                let key = `${jam}-${k}`;
+                let dataCell = jadwalExisting[key] || { mapel: "", guru: "" };
 
-            // Kolom Per Kelas
-            kelasTerpilih.forEach(k => {
-                // Kita beri ID unik ke setiap input: jam-kelas-jenis
-                // Contoh: mapel-1-6.1
                 tr.innerHTML += `
                     <td>
                         <div class="cell-input">
-                            <select name="mapel-${jam}-${k}">
-                                <option value="" style="color:#ccc">-- Mapel --</option>
+                            <select name="mapel-${jam}-${k}" class="inp-mapel">
                                 ${opsiMapel}
                             </select>
-                            <select name="guru-${jam}-${k}">
-                                <option value="" style="color:#ccc">-- Guru --</option>
+                            <select name="guru-${jam}-${k}" class="inp-guru">
                                 ${opsiGuru}
                             </select>
                         </div>
@@ -176,86 +186,96 @@
                 `;
             });
             bodyTable.appendChild(tr);
-        }
 
-        document.getElementById('btnSimpan').style.display = 'inline-block';
-        document.getElementById('statusMsg').style.display = 'none';
+            // Set Value setelah elemen dibuat (agar dropdown terpilih otomatis)
+            kelasArray.forEach(k => {
+                let key = `${jam}-${k}`;
+                let dataCell = jadwalExisting[key];
+                if(dataCell) {
+                    // Cari element select yang baru kita inject
+                    let selMapel = tr.querySelector(`select[name="mapel-${jam}-${k}"]`);
+                    let selGuru = tr.querySelector(`select[name="guru-${jam}-${k}"]`);
+                    if(selMapel) selMapel.value = dataCell.mapel;
+                    if(selGuru) selGuru.value = dataCell.guru;
+                    
+                    // Visual feedback: Kasih warna dikit kalau sudah terisi
+                    if(dataCell.guru) selGuru.style.backgroundColor = "#e8f0fe";
+                }
+            });
+        }
     }
 
-    // 3. Simpan Data (Bulk)
+    // 3. Simpan Data
     function simpanData() {
         const btn = document.getElementById('btnSimpan');
         const statusBox = document.getElementById('statusMsg');
-        const form = document.getElementById('formGrid');
         const hari = document.getElementById('pilihHari').value;
-        
+        const form = document.getElementById('formJadwal');
+
         btn.disabled = true;
-        btn.innerText = "Sedang Menyimpan...";
+        btn.innerText = "Menyimpan...";
         statusBox.style.display = 'none';
 
-        // Kumpulkan data dari Grid
-        let dataKirim = [];
-        const inputs = form.querySelectorAll('select');
-        
-        // Kita butuh mapping input kembali ke struktur data
-        // Format name: "jenis-jam-kelas" (contoh: mapel-1-6.1)
-        
-        let tempObj = {}; // { "1-6.1": {mapel:..., guru:...} }
+        // Scraping data dari Grid
+        let dataBatch = [];
+        let inputs = form.querySelectorAll('select');
+        let temp = {};
 
-        inputs.forEach(input => {
-            if(!input.value) return; // Lewati yang kosong
-
-            const parts = input.name.split('-'); // [jenis, jam, kelas]
-            const jenis = parts[0]; // mapel / guru
-            const jam = parts[1];
-            const kelas = parts[2]; // Bisa jadi "6.1" atau "6.2" dll
-            const key = `${jam}-${kelas}`;
-
-            if(!tempObj[key]) tempObj[key] = { hari: hari, jam: jam, kelas: kelas };
-            tempObj[key][jenis] = input.value;
+        // Grouping: mapel-1-6.1 & guru-1-6.1
+        inputs.forEach(inp => {
+            let parts = inp.name.split('-'); // [jenis, jam, kelas]
+            if(parts.length < 3) return;
+            
+            let key = `${parts[1]}-${parts[2]}`; // 1-6.1
+            if(!temp[key]) temp[key] = { hari: hari, jam: parts[1], kelas: parts[2] };
+            
+            temp[key][parts[0]] = inp.value; // parts[0] is mapel or guru
         });
 
-        // Ubah object ke array siap kirim
-        for (let key in tempObj) {
-            let item = tempObj[key];
-            // Hanya kirim jika pasangan Mapel & Guru terisi lengkap (Opsional, tergantung kebijakan)
-            if(item.guru && item.mapel) {
-                dataKirim.push(item);
+        // Convert object to array
+        for(let key in temp) {
+            let item = temp[key];
+            // Kirim item jika minimal salah satu terisi (biar bisa hapus/kosongkan jadwal juga)
+            // Atau logic: Hanya kirim yang Full?
+            // Agar bisa menghapus jadwal: Kirim data dengan Mapel="" Guru="" nanti backend handle hapus.
+            // Tapi untuk simplifikasi sekarang: Kita kirim yang ada isinya saja. 
+            // Kalau mau hapus, user set ke "--Pilih--".
+            
+            if(item.guru || item.mapel) {
+                dataBatch.push(item);
+            } else {
+                // Jika user mengosongkan dropdown, kita kirim sinyal untuk hapus?
+                // Logic Backend saya di atas akan menghapus slot 6.1 jam 1, lalu insert baru.
+                // Jika input kosong, dia tidak insert baru. Jadi EFEKNYA TERHAPUS.
+                // Maka kita push juga data kosong ini agar backend menghapus data lamanya.
+                dataBatch.push(item); 
             }
         }
 
-        if(dataKirim.length === 0) {
-            alert("Isi minimal satu jadwal (Mapel & Guru) sebelum menyimpan.");
-            btn.disabled = false;
-            btn.innerText = "💾 SIMPAN SEMUA";
-            return;
-        }
-
-        console.log("Mengirim data:", dataKirim);
-
-        // Kirim ke Backend
         fetch(API_URL, {
             method: 'POST',
-            body: JSON.stringify(dataKirim)
+            body: JSON.stringify(dataBatch)
         })
         .then(res => res.json())
         .then(res => {
             btn.disabled = false;
-            btn.innerText = "💾 SIMPAN SEMUA";
+            btn.innerText = "💾 SIMPAN PERUBAHAN";
             statusBox.style.display = 'block';
             
             if(res.status === 'success') {
-                statusBox.className = 'msg-box success';
+                statusBox.className = 'success';
                 statusBox.innerText = res.message;
+                // Optional: Reload grid to show fresh state
+                // loadGrid(); 
             } else {
-                statusBox.className = 'msg-box error';
+                statusBox.className = 'error';
                 statusBox.innerText = res.message;
             }
         })
         .catch(err => {
             btn.disabled = false;
             console.error(err);
-            alert("Gagal koneksi server.");
+            alert("Koneksi Error");
         });
     }
 </script>
